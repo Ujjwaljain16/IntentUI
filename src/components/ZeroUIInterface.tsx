@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useTamboThread, useTamboThreadInput } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ChevronRight, Command, Zap } from "lucide-react";
-import { classifyIntent, debugClassify, type UIDensity } from "@/lib/intent-classifier";
+import { X, ChevronRight, Command, Zap, Info } from "lucide-react";
+import { useDensity } from "@/context/DensityContext";
 
 // Locked 5 Canonical Demo Prompts
 const DEMO_PROMPTS = [
@@ -18,8 +18,9 @@ const DEMO_PROMPTS = [
 export function ZeroUIInterface() {
     const { thread } = useTamboThread();
     const { value, setValue, submit, isPending } = useTamboThreadInput();
+    const { currentDensity, why, actions } = useDensity();
+
     const [hasStarted, setHasStarted] = useState(false);
-    const [currentDensity, setCurrentDensity] = useState<UIDensity>("STANDARD");
     const [showDensityBadge, setShowDensityBadge] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -30,10 +31,10 @@ export function ZeroUIInterface() {
         }
     }, [thread.messages]);
 
-    // Fade out density badge after 2 seconds (dev-only feature)
+    // Fade out density badge after 3 seconds
     useEffect(() => {
         if (showDensityBadge) {
-            const timer = setTimeout(() => setShowDensityBadge(false), 2000);
+            const timer = setTimeout(() => setShowDensityBadge(false), 3000);
             return () => clearTimeout(timer);
         }
     }, [showDensityBadge, currentDensity]);
@@ -42,11 +43,9 @@ export function ZeroUIInterface() {
         e.preventDefault();
         if (!value.trim()) return;
 
-        // Classify intent and log for debugging
-        const classification = classifyIntent(value);
-        setCurrentDensity(classification.uiDensity);
-        setShowDensityBadge(true); // Show badge temporarily
-        debugClassify(value); // Console log for development
+        // V2 Engine Processing 🧠
+        actions.processInput(value);
+        setShowDensityBadge(true);
 
         submit();
         setHasStarted(true);
@@ -74,10 +73,11 @@ export function ZeroUIInterface() {
         // Trigger submit after a tiny delay to allow value to update
         setTimeout(() => {
             const fakeEvent = { preventDefault: () => { } } as React.FormEvent;
-            const classification = classifyIntent(text);
-            setCurrentDensity(classification.uiDensity);
+
+            // V2 Engine Processing 🧠
+            actions.processInput(text);
             setShowDensityBadge(true);
-            debugClassify(text);
+
             submit();
             setHasStarted(true);
             setTimeout(() => setValue(""), 100);
@@ -139,21 +139,26 @@ export function ZeroUIInterface() {
                                 <div className="flex items-center gap-2 text-sm font-medium text-white">
                                     <Zap className="w-4 h-4 text-yellow-400" />
                                     <span>IntentUI</span>
+                                    <span className="text-xs text-gray-500 bg-white/10 px-1.5 py-0.5 rounded">V2 Engine</span>
                                 </div>
-                                {/* Density Indicator - Fades after 2s */}
+                                {/* Density Indicator - Fades after 3s */}
                                 <AnimatePresence>
                                     {showDensityBadge && (
-                                        <motion.span
+                                        <motion.div
                                             initial={{ opacity: 0, scale: 0.8 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.8 }}
-                                            className={`text-[10px] px-2 py-0.5 rounded-full ${currentDensity === "MINIMAL" ? "bg-green-500/20 text-green-400" :
-                                                currentDensity === "STANDARD" ? "bg-blue-500/20 text-blue-400" :
-                                                    "bg-purple-500/20 text-purple-400"
+                                            className={`flex items-center gap-2 px-3 py-1 rounded-full border ${currentDensity === "MINIMAL" ? "bg-green-500/10 border-green-500/20 text-green-400" :
+                                                    currentDensity === "STANDARD" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" :
+                                                        "bg-purple-500/10 border-purple-500/20 text-purple-400"
                                                 }`}
                                         >
-                                            {currentDensity}
-                                        </motion.span>
+                                            <span className="text-[10px] font-bold tracking-wider">{currentDensity}</span>
+                                            <div className="w-px h-3 bg-current opacity-30" />
+                                            <span className="text-[10px] opacity-80 max-w-[150px] truncate" title={why}>
+                                                {why}
+                                            </span>
+                                        </motion.div>
                                     )}
                                 </AnimatePresence>
                             </div>
@@ -200,7 +205,7 @@ export function ZeroUIInterface() {
                                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                                 </div>
-                                <span>Materializing...</span>
+                                <span>Thinking...</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -223,7 +228,7 @@ export function ZeroUIInterface() {
                         >
                             <div className="flex items-center justify-center gap-2 mb-3">
                                 <span className="px-2 py-0.5 text-[10px] bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-full text-blue-300 uppercase tracking-wider">
-                                    Generative UI • Tambo SDK
+                                    V2 Engine Active
                                 </span>
                             </div>
                             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
@@ -233,7 +238,7 @@ export function ZeroUIInterface() {
                                 Interfaces that adapt to how you speak
                             </p>
                             <p className="text-gray-600 text-xs">
-                                Demo: Personal Finance Layer
+                                Deterministic UI Density • Confidence Aware
                             </p>
                         </motion.div>
                     )}

@@ -5,6 +5,7 @@ import { useMcpServers } from "@/components/tambo/mcp-config-modal";
 import { components, tools } from "@/lib/tambo";
 import { TamboProvider, type ContextHelpers } from "@tambo-ai/react";
 import { ExpenseProvider, useExpenses } from "@/context/ExpenseContext";
+import { DensityProvider, useDensity } from "@/context/DensityContext";
 
 /**
  * IntentUI Context Helper
@@ -15,18 +16,28 @@ import { ExpenseProvider, useExpenses } from "@/context/ExpenseContext";
 const AppContent = () => {
   const mcpServers = useMcpServers();
   const { expenses } = useExpenses();
+  const { currentDensity, why } = useDensity();
 
   // Dynamic context that includes current expenses so AI can see them!
   const dynamicContextHelpers: ContextHelpers = {
     intentGuidance: () => ({
       name: "IntentUI Guidelines",
       content: `
-## IntentUI Component Selection Rules
+## IntentUI Component Selection Rules (V2 Engine Active)
 
 You are IntentUI, a finance assistant that adapts UI based on user intent.
 
+### CURRENT SYSTEM STATE (Computed Deterministically):
+- **UI Density Mode:** ${currentDensity}
+- **Reasoning:** ${why}
+- **User Expenses:** ${expenses.length} items, Total: $${expenses.reduce((sum, e) => sum + e.amount, 0)}
+
+### CRITICAL: Respect the Density Mode
+- If density is **MINIMAL**: Render ONLY the most essential component (usually ExpenseInput with minimal props).
+- If density is **STANDARD**: Render standard components (Charts, Tables).
+- If density is **EXPANDED**: Render InsightPanel and guided inputs.
+
 ### CURRENT USER DATA (In-Memory):
-The user currently has ${expenses.length} expenses totaling $${expenses.reduce((sum, e) => sum + e.amount, 0)}.
 Recent expenses: ${JSON.stringify(expenses.slice(0, 5))}
 
 ### CRITICAL: Always Extract and Prefill Values
@@ -42,10 +53,6 @@ Category Mapping:
 - rent, electricity, wifi, insurance → "Bills"
 - movies, netflix, games → "Entertainment"
 - doctor, medicine, gym → "Health"
-
-### UI Mode Selection:
-- User gives specific values → mode="minimal"
-- User is uncertain ("I think...", "maybe...") → mode="expanded", showGuidance=true
 
 ### Other Components:
 - "Show spending" → SpendingChart (pie) + SummaryCards
@@ -73,8 +80,9 @@ Category Mapping:
 export default function Home() {
   return (
     <ExpenseProvider>
-      <AppContent />
+      <DensityProvider>
+        <AppContent />
+      </DensityProvider>
     </ExpenseProvider>
   );
 }
-
