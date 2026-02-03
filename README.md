@@ -84,6 +84,16 @@ const components: TamboComponent[] = [
 
 ---
 
+### 🔍 Responsibility Split
+
+* **Intent Classifier** → *What is the user trying to do? How confident do they sound?*
+* **Tambo** → *Which components should exist right now, and with what props?*
+
+> **Note:**
+> Intent classification and UI density mapping are deterministic and explainable. No opaque ML models are used for the core logic—every UI decision can be traced to intent type + confidence level.
+
+---
+
 ## 🏗️ System Architecture
 
 ```
@@ -130,7 +140,7 @@ We intentionally limited to **6 components** with strict rules:
 
 ## 🎬 Demo Flow (Click-to-Run Prompts)
 
-The app includes **4 pre-configured demo prompts** (click to auto-run):
+The app includes **5 core demo prompts** (click to auto-run):
 
 | # | Prompt | Expected UI | Density |
 |---|--------|-------------|---------|
@@ -138,6 +148,7 @@ The app includes **4 pre-configured demo prompts** (click to auto-run):
 | 2 | "Show my spending breakdown" | Pie chart + summary cards | 🔵 STANDARD |
 | 3 | "Compare food vs transport" | Bar chart comparison | 🔵 STANDARD |
 | 4 | "I think I'm overspending" | Insights + guidance + chart | 🟣 EXPANDED |
+| 5 | "Export this" | Quick action panel | 🟢 MINIMAL |
 
 > **Watch the background glow change color with each prompt!**
 

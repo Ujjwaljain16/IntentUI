@@ -272,7 +272,7 @@ export function ZeroUIInterface() {
                         >
                             <p className="text-xs text-gray-600 uppercase tracking-wider">Click to try:</p>
                             <div className="flex flex-wrap justify-center gap-2">
-                                {DEMO_PROMPTS.slice(0, 4).map((hint) => {
+                                {DEMO_PROMPTS.slice(0, 5).map((hint) => {
                                     // Color code by density
                                     const colorClass = hint.density === "MINIMAL"
                                         ? "border-green-500/30 hover:bg-green-500/10 hover:border-green-500/50"
