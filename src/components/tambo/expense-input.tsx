@@ -105,7 +105,7 @@ export function ExpenseInput({
         console.log("Expense saved:", { amount, category, merchant, date });
         setSubmitted(true);
 
-        // 🎉 Confetti celebration!
+        // Trigger confetti effect on success
         import('canvas-confetti').then((confetti) => {
             confetti.default({
                 particleCount: 100,

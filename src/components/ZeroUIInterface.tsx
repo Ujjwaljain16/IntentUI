@@ -99,7 +99,7 @@ export function ZeroUIInterface() {
                 />
                 <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-900/20 rounded-full blur-[120px]" />
 
-                {/* Floating particles for extra magic - fixed positions to avoid hydration mismatch */}
+                {/* Floating background particles */}
                 {[
                     { left: '10%', top: '20%' },
                     { left: '80%', top: '15%' },

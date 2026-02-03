@@ -50,7 +50,7 @@ export function InsightPanel({ insights = "[]", mood = "supportive" }: InsightPa
         >
             {mood === "supportive" && (
                 <p className="text-sm text-gray-400 mb-4">
-                    💡 Here's what I noticed about your spending...
+                    Here's what I noticed about your spending...
                 </p>
             )}
 
