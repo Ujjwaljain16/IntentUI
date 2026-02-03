@@ -4,6 +4,7 @@ import { ZeroUIInterface } from "@/components/ZeroUIInterface";
 import { useMcpServers } from "@/components/tambo/mcp-config-modal";
 import { components, tools } from "@/lib/tambo";
 import { TamboProvider, type ContextHelpers } from "@tambo-ai/react";
+import { ExpenseProvider, useExpenses } from "@/context/ExpenseContext";
 
 /**
  * IntentUI Context Helper
@@ -11,14 +12,22 @@ import { TamboProvider, type ContextHelpers } from "@tambo-ai/react";
  * Provides additional context to guide the AI's component selection.
  * This is how we communicate intent-awareness to Tambo.
  */
-const intentContextHelpers: ContextHelpers = {
-  // This context helper provides guidance on how to select components
-  intentGuidance: () => ({
-    name: "IntentUI Guidelines",
-    content: `
+const AppContent = () => {
+  const mcpServers = useMcpServers();
+  const { expenses } = useExpenses();
+
+  // Dynamic context that includes current expenses so AI can see them!
+  const dynamicContextHelpers: ContextHelpers = {
+    intentGuidance: () => ({
+      name: "IntentUI Guidelines",
+      content: `
 ## IntentUI Component Selection Rules
 
 You are IntentUI, a finance assistant that adapts UI based on user intent.
+
+### CURRENT USER DATA (In-Memory):
+The user currently has ${expenses.length} expenses totaling $${expenses.reduce((sum, e) => sum + e.amount, 0)}.
+Recent expenses: ${JSON.stringify(expenses.slice(0, 5))}
 
 ### CRITICAL: Always Extract and Prefill Values
 When user mentions an amount or category, you MUST pass them to ExpenseInput:
@@ -39,16 +48,13 @@ Category Mapping:
 - User is uncertain ("I think...", "maybe...") → mode="expanded", showGuidance=true
 
 ### Other Components:
-- "Show spending" → SpendingChart (pie) + SummaryCards with sample data
+- "Show spending" → SpendingChart (pie) + SummaryCards
 - "Compare X vs Y" → SpendingChart (bar)
 - "Why am I broke?" → InsightPanel + SpendingChart
 - "Export" → ActionPanel
-    `.trim(),
-  }),
-};
-
-export default function Home() {
-  const mcpServers = useMcpServers();
+      `.trim(),
+    }),
+  };
 
   return (
     <TamboProvider
@@ -57,10 +63,18 @@ export default function Home() {
       tools={tools}
       tamboUrl={process.env.NEXT_PUBLIC_TAMBO_URL}
       mcpServers={mcpServers}
-      contextHelpers={intentContextHelpers}
+      contextHelpers={dynamicContextHelpers}
     >
       <ZeroUIInterface />
     </TamboProvider>
+  );
+};
+
+export default function Home() {
+  return (
+    <ExpenseProvider>
+      <AppContent />
+    </ExpenseProvider>
   );
 }
 

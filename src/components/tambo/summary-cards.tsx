@@ -3,27 +3,52 @@
 import { useMemo } from "react";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Calendar } from "lucide-react";
+import { TrendingUp, DollarSign, ShoppingBag, Calendar } from "lucide-react";
+import { useExpenses } from "@/context/ExpenseContext";
 
 export const summaryCardsSchema = z.object({
-    totalSpent: z.number().describe("Total amount spent"),
-    transactionCount: z.number().describe("Number of transactions"),
-    topCategory: z.string().optional().describe("Most spent category"),
-    avgPerDay: z.number().optional().describe("Average spending per day"),
-    trend: z.enum(["up", "down", "stable"]).optional().describe("Spending trend"),
-    trendPercent: z.number().optional().describe("Trend percentage change"),
+    // Only used for schema definition now, data comes from context
+    totalSpent: z.number().optional(),
+    transactionCount: z.number().optional(),
+    topCategory: z.string().optional(),
+    avgPerDay: z.number().optional(),
 });
 
 export type SummaryCardsProps = z.infer<typeof summaryCardsSchema>;
 
-export function SummaryCards({
-    totalSpent = 0,
-    transactionCount = 0,
-    topCategory,
-    avgPerDay,
-    trend,
-    trendPercent
-}: SummaryCardsProps) {
+export function SummaryCards({ }: SummaryCardsProps) {
+    const { expenses } = useExpenses();
+
+    const { totalSpent, transactionCount, topCategory, avgPerDay } = useMemo(() => {
+        const total = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+        const count = expenses.length;
+
+        // Count category totals
+        const catTotals = expenses.reduce((acc, curr) => {
+            acc[curr.category] = (acc[curr.category] || 0) + (curr.amount || 0);
+            return acc;
+        }, {} as Record<string, number>);
+
+        let maxCat = "";
+        let maxVal = 0;
+        Object.entries(catTotals).forEach(([cat, val]) => {
+            if (val > maxVal) {
+                maxVal = val;
+                maxCat = cat;
+            }
+        });
+
+        const uniqueDates = new Set(expenses.map(e => e.date)).size || 1;
+        const avg = count > 0 ? total / uniqueDates : 0;
+
+        return {
+            totalSpent: total,
+            transactionCount: count,
+            topCategory: maxCat,
+            avgPerDay: avg
+        };
+    }, [expenses]);
+
     const cards = useMemo(() => [
         {
             label: "Total Spent",
@@ -46,15 +71,14 @@ export function SummaryCards({
             color: "from-purple-500/20 to-pink-500/10",
             iconColor: "text-purple-400",
         }] : []),
-        ...(avgPerDay !== undefined ? [{
+        {
             label: "Avg/Day",
             value: `$${avgPerDay.toFixed(0)}`,
-            icon: trend === "up" ? TrendingUp : TrendingDown,
-            color: trend === "up" ? "from-red-500/20 to-orange-500/10" : "from-green-500/20 to-teal-500/10",
-            iconColor: trend === "up" ? "text-red-400" : "text-green-400",
-            badge: trendPercent ? `${trend === "up" ? "+" : "-"}${trendPercent}%` : undefined,
-        }] : []),
-    ], [totalSpent, transactionCount, topCategory, avgPerDay, trend, trendPercent]);
+            icon: TrendingUp,
+            color: "from-orange-500/20 to-amber-500/10",
+            iconColor: "text-orange-400",
+        },
+    ], [totalSpent, transactionCount, topCategory, avgPerDay]);
 
     return (
         <motion.div
@@ -73,12 +97,6 @@ export function SummaryCards({
                     <card.icon className={`absolute top-3 right-3 w-8 h-8 ${card.iconColor} opacity-30`} />
                     <p className="text-xs text-gray-400 uppercase tracking-wider">{card.label}</p>
                     <p className="text-2xl font-bold text-white mt-1">{card.value}</p>
-                    {card.badge && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full mt-2 inline-block ${trend === "up" ? "bg-red-500/20 text-red-300" : "bg-green-500/20 text-green-300"
-                            }`}>
-                            {card.badge}
-                        </span>
-                    )}
                 </motion.div>
             ))}
         </motion.div>

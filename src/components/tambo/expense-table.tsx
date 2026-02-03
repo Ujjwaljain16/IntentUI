@@ -4,46 +4,33 @@ import { useMemo } from "react";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { ArrowUpDown, DollarSign, Tag, Calendar } from "lucide-react";
+import { useExpenses } from "@/context/ExpenseContext";
 
 export const expenseTableSchema = z.object({
-    expenses: z.string().describe("JSON stringified array: [{id, amount, category, merchant?, date, note?}]"),
+    expenses: z.string().optional().describe("Legacy prop, ignored in favor of live context"),
     title: z.string().optional(),
     showTotal: z.boolean().optional().default(true),
 });
 
 export type ExpenseTableProps = z.infer<typeof expenseTableSchema>;
 
-export function ExpenseTable({ expenses = "[]", title, showTotal = true }: ExpenseTableProps) {
-    let parsedExpenses: Array<{
-        id?: string;
-        amount: number;
-        category: string;
-        merchant?: string;
-        date: string;
-        note?: string
-    }> = [];
-
-    try {
-        parsedExpenses = JSON.parse(expenses);
-    } catch {
-        if (expenses && expenses.endsWith("]")) {
-            console.error("Failed to parse expenses");
-        }
-    }
+export function ExpenseTable({ title, showTotal = true }: ExpenseTableProps) {
+    const { expenses } = useExpenses();
+    const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const total = useMemo(() =>
-        parsedExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0),
-        [parsedExpenses]
+        sortedExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0),
+        [sortedExpenses]
     );
 
-    if (parsedExpenses.length === 0) {
+    if (sortedExpenses.length === 0) {
         return (
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="w-full max-w-xl bg-white/5 border border-white/10 rounded-xl p-8 text-center text-gray-500"
             >
-                No expenses to display
+                No expenses recorded yet. Try adding one!
             </motion.div>
         );
     }
@@ -61,7 +48,7 @@ export function ExpenseTable({ expenses = "[]", title, showTotal = true }: Expen
             )}
 
             <div className="divide-y divide-white/5">
-                {parsedExpenses.map((expense, idx) => (
+                {sortedExpenses.map((expense, idx) => (
                     <motion.div
                         key={expense.id || idx}
                         initial={{ opacity: 0, x: -10 }}

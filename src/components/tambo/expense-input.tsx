@@ -5,6 +5,7 @@ import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, Check, Calendar, Tag, Sparkles, HelpCircle } from "lucide-react";
 import { useTamboThread } from "@tambo-ai/react";
+import { useExpenses } from "@/context/ExpenseContext";
 
 export const expenseInputSchema = z.object({
     mode: z.enum(["minimal", "expanded"]).default("minimal").describe("UI density mode: 'minimal' for confident users, 'expanded' for uncertain users"),
@@ -100,9 +101,18 @@ export function ExpenseInput({
         }
     }, [finalAmount, finalCategory, amount, category]);
 
+    const { addExpense } = useExpenses();
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Expense saved:", { amount, category, merchant, date });
+
+        addExpense({
+            amount: parseFloat(amount),
+            category,
+            merchant,
+            date
+        });
+
         setSubmitted(true);
 
         // Trigger confetti effect on success

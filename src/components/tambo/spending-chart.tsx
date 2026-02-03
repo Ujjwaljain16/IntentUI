@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import { useExpenses } from "@/context/ExpenseContext";
+import { useMemo } from "react";
 
 export const spendingChartSchema = z.object({
     type: z.enum(["pie", "bar"]).default("pie").describe("Chart type"),
@@ -14,21 +16,29 @@ export type SpendingChartProps = z.infer<typeof spendingChartSchema>;
 
 const COLORS = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#ec4899", "#06b6d4"];
 
-export function SpendingChart({ type = "pie", data = "[]", title }: SpendingChartProps) {
-    let parsedData: Array<{ name: string; value: number; color?: string }> = [];
 
-    try {
-        parsedData = JSON.parse(data);
-    } catch {
-        if (data && data.endsWith("]")) {
-            console.error("Failed to parse chart data");
-        }
-    }
+export function SpendingChart({ type = "pie", title }: SpendingChartProps) {
+    const { expenses } = useExpenses();
+
+    const parsedData = useMemo(() => {
+        const categoryData = expenses.reduce((acc, curr) => {
+            acc[curr.category] = (acc[curr.category] || 0) + (curr.amount || 0);
+            return acc;
+        }, {} as Record<string, number>);
+
+        return Object.entries(categoryData)
+            .map(([name, value], index) => ({
+                name,
+                value,
+                color: COLORS[index % COLORS.length]
+            }))
+            .sort((a, b) => b.value - a.value);
+    }, [expenses]);
 
     if (parsedData.length === 0) {
         return (
             <div className="w-full max-w-md h-64 flex items-center justify-center text-gray-500 bg-white/5 rounded-xl border border-white/10">
-                Loading chart...
+                No spending data available yet.
             </div>
         );
     }
